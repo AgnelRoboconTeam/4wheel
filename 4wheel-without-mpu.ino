@@ -21,6 +21,7 @@ bool enabled = false;
 
 // Set maximium PWM. This is tweaked by the joystick controller.
 short max_pwm = 250;
+bool limit_rotation_pwm = false;
 
 // Configure the motor driver.
 CytronMD fr_motor(PWM_DIR, 6, 23); // PWM, DIR
@@ -99,9 +100,6 @@ void loop() {
 
     if (!enabled) return;
 
-    if (Xbox.getButtonClick(A))
-        max_pwm = max_pwm <= 150 ? 250 : 100;
-
     // PWM decrement, increments - by 50.
     if (Xbox.getButtonClick(LB))
         // Don't decrement after 50 PWM.
@@ -111,14 +109,18 @@ void loop() {
         // Don't increment after 250 PWM.
         max_pwm = max_pwm >= 250 ? 50 : max_pwm + 50;
 
+    // Toogle max PWM for rotation.
+    if (Xbox.getButtonClick(A))
+        limit_rotation_pwm = true;
 
     // Initialize fl, fr, bl, br.
     short fl, fr, bl, br;
     fl = fr = bl = br = 0;
 
     // Get rt, lt values.
-    short rt = Xbox.getButtonPress(RT);
-    short lt = Xbox.getButtonPress(LT);
+    short rotation_max_pwm = limit_rotation_pwm == true ? 100 : max_pwm;
+    short rt = map(Xbox.getButtonPress(RT), -255, 255, -rotation_max_pwm, rotation_max_pwm);
+    short lt = map(Xbox.getButtonPress(LT), -255, 255, -rotation_max_pwm, rotation_max_pwm);
 
     // Rotate clockwise.
     if (rt > INPUT_SENSITIVITY) {
